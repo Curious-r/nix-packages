@@ -1,0 +1,34 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v16
+
+      - name: Check formatting
+        run: nix fmt -- --check $(git ls-files '*.nix')
+
+      - name: Check flake
+        run: nix flake check --all-systems
+
+      - name: Evaluate pure Nix API without the flake
+        run: |
+          nix eval --impure --raw --expr \
+            '(import ./lib { pkgs = import (import ./npins).nixpkgs { system = builtins.currentSystem; }; }).vaultix.name'
+          nix eval --impure --raw --expr \
+            '(import (import ./npins).nixpkgs { system = builtins.currentSystem; overlays = [ (import ./overlays) ]; }).pam-fido-remote.name'
+
+      - name: Build vaultix
+        run: nix build .#vaultix
+
+      - name: Build pam-fido-remote
+        run: nix build .#pam-fido-remote
