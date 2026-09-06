@@ -1,11 +1,11 @@
 {
   description = "Reusable third-party Nix packages";
 
-  outputs =
-    { self }:
-    let
-      sources = import ./npins;
+  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
 
+  outputs =
+    { nixpkgs, ... }:
+    let
       systems = [
         "x86_64-linux"
         "aarch64-linux"
@@ -20,13 +20,24 @@
           }) systems
         );
 
-      pkgsFor = system: import sources.nixpkgs { inherit system; };
+      overlay = import ./overlay.nix;
     in
     {
-      packages = forAllSystems (system: import ./lib { pkgs = pkgsFor system; });
+      overlays.default = overlay;
 
-      overlays.default = import ./overlays;
+      packages = forAllSystems (
+        system:
+        let
+          pkgs = import nixpkgs {
+            inherit system;
+            overlays = [ overlay ];
+          };
+        in
+        {
+          inherit (pkgs) vaultix pam-fido-remote;
+        }
+      );
 
-      formatter = forAllSystems (system: (pkgsFor system).nixfmt);
+      formatter = forAllSystems (system: nixpkgs.legacyPackages.${system}.nixfmt);
     };
 }
