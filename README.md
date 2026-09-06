@@ -83,15 +83,15 @@ The canonical integration API for adding these packages to an existing nixpkgs p
 
 ```nix
 nixpkgs.overlays = [
-  inputs.nix-packages.overlays.default
+  inputs.curious.overlays.default
 ];
 ```
 
 Packages can then be used as:
 
 ```nix
-pkgs.vaultix
-pkgs.pam-fido-remote
+pkgs.curious.vaultix
+pkgs.curious.pam-fido-remote`
 ```
 
 The overlay discovers packages directly from `pkgs/by-name`.
@@ -109,12 +109,12 @@ For a flake consumer:
 
 ```nix
 {
-  inputs.nix-packages.url = "github:Curious-r/nix-packages";
+  inputs.curious.url = "github:Curious-r/nix-packages";
 
   # ...
 
   environment.systemPackages = [
-    inputs.nix-packages.packages.${system}.vaultix
+    inputs.curious.packages.${system}.vaultix
   ];
 }
 ```
