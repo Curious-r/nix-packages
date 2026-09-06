@@ -1,5 +1,4 @@
-final: _prev: {
-  vaultix = final.callPackage ./pkgs/by-name/va/vaultix/package.nix { };
-
-  pam-fido-remote = final.callPackage ./pkgs/by-name/pa/pam-fido-remote/package.nix { };
-}
+let
+  packageFiles = import ./pkgs/by-name.nix;
+in
+final: _prev: builtins.mapAttrs (_name: packageFile: final.callPackage packageFile { }) packageFiles

@@ -28,14 +28,14 @@
       packages = forAllSystems (
         system:
         let
+          packageFiles = import ./pkgs/by-name.nix;
+
           pkgs = import nixpkgs {
             inherit system;
             overlays = [ overlay ];
           };
         in
-        {
-          inherit (pkgs) vaultix pam-fido-remote;
-        }
+        builtins.mapAttrs (name: _: pkgs.${name}) packageFiles
       );
 
       formatter = forAllSystems (system: nixpkgs.legacyPackages.${system}.nixfmt);
