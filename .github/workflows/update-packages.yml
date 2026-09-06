@@ -45,7 +45,7 @@ jobs:
               --raw \
               -E '
                 builtins.concatStringsSep "\n" (
-                  builtins.attrNames (import ./default.nix)
+                  builtins.attrNames (import ./default.nix { })
                 )
               '
           )"
@@ -55,8 +55,9 @@ jobs:
 
             echo "::group::Update ${package}"
 
-            nix-shell -p nix-update --run \
-              "nix-update ${package} --use-update-script"
+            nix run nixpkgs#nix-update -- \
+              "${package}" \
+              --use-update-script
 
             echo "::endgroup::"
           done <<< "$packages"
