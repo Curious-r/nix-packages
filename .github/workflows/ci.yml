@@ -2,7 +2,8 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
   pull_request:
   workflow_dispatch:
 
@@ -18,17 +19,20 @@ jobs:
     name: Formatting
     runs-on: ubuntu-latest
     timeout-minutes: 10
+
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+
       - name: Install Nix
         uses: cachix/install-nix-action@v31
         with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
           extra_nix_config: |
             connect-timeout = 3
             extra-substituters = https://cache.nixos.org https://nix-community.cachix.org https://cache.numtide.com
             extra-trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g=
-            github_access_token = ${{ secrets.GITHUB_TOKEN }}
+
       - name: Check formatting
         run: nix fmt -- --check $(git ls-files '*.nix')
 
@@ -36,17 +40,20 @@ jobs:
     name: Flake check
     runs-on: ubuntu-latest
     timeout-minutes: 30
+
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+
       - name: Install Nix
         uses: cachix/install-nix-action@v31
         with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
           extra_nix_config: |
             connect-timeout = 3
             extra-substituters = https://cache.nixos.org https://nix-community.cachix.org https://cache.numtide.com
             extra-trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g=
-            github_access_token = ${{ secrets.GITHUB_TOKEN }}
+
       - name: Check flake
         run: nix flake check --all-systems
 
@@ -54,6 +61,7 @@ jobs:
     name: Package API
     runs-on: ubuntu-latest
     timeout-minutes: 15
+
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -61,60 +69,60 @@ jobs:
       - name: Install Nix
         uses: cachix/install-nix-action@v31
         with:
+          nix_path: nixpkgs=channel:nixos-unstable
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
           extra_nix_config: |
             connect-timeout = 3
             extra-substituters = https://cache.nixos.org https://nix-community.cachix.org https://cache.numtide.com
             extra-trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g=
-            github_access_token = ${{ secrets.GITHUB_TOKEN }}
 
       - name: Check package API
         run: |
-          nix eval --impure --expr '
-            let
-              packageFiles = import ./pkgs/by-name.nix;
-              packageNames = builtins.attrNames packageFiles;
-
-              nixpkgs = (builtins.getFlake (toString ./.)).inputs.nixpkgs;
-              pkgs = import nixpkgs {
-                system = builtins.currentSystem;
-                overlays = [ (import ./overlay.nix) ];
-              };
-
-              flakePackages =
-              (builtins.getFlake (toString ./.)).packages.${builtins.currentSystem};
-              flakeNames = builtins.attrNames flakePackages;
-
-              checkPackage = name:
-                assert builtins.hasAttr name pkgs;
-                assert pkgs.lib.isDerivation pkgs.${name};
-                true;
-            in
-              assert builtins.all checkPackage packageNames;
-              assert packageNames == flakeNames;
-              true
-          '
+          nix-instantiate \
+            --eval \
+            --strict \
+            -E '
+              let
+                packages = import ./default.nix { };
+                packageNames = builtins.attrNames packages;
+              in
+                assert builtins.all (
+                  name: packages.${name}.type == "derivation"
+                ) packageNames;
+                true
+            '
 
   matrix:
     name: Generate build matrix
     runs-on: ubuntu-latest
     timeout-minutes: 15
+
     outputs:
       matrix: ${{ steps.generate.outputs.matrix }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+
       - name: Install Nix
         uses: cachix/install-nix-action@v31
         with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
           extra_nix_config: |
             connect-timeout = 3
             extra-substituters = https://cache.nixos.org https://nix-community.cachix.org https://cache.numtide.com
             extra-trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g=
-            github_access_token = ${{ secrets.GITHUB_TOKEN }}
+
       - name: Generate matrix
         id: generate
         run: |
-          matrix="$(nix eval --json -f ./ci/jobs.nix)"
+          matrix="$(
+            nix-instantiate \
+              --eval \
+              --json \
+              --strict \
+              -f ./ci/jobs.nix
+          )"
           echo "matrix=${matrix}" >> "$GITHUB_OUTPUT"
 
   build:
@@ -125,31 +133,37 @@ jobs:
       - matrix
     runs-on: ${{ matrix.runsOn }}
     timeout-minutes: 180
+
     strategy:
       fail-fast: false
       matrix:
         include: ${{ fromJSON(needs.matrix.outputs.matrix) }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+
       - name: Install Nix
         uses: cachix/install-nix-action@v31
         with:
+          nix_path: nixpkgs=channel:nixos-unstable
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
           extra_nix_config: |
             connect-timeout = 3
             extra-substituters = https://cache.nixos.org https://nix-community.cachix.org https://cache.numtide.com
             extra-trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g=
-            github_access_token = ${{ secrets.GITHUB_TOKEN }}
+
       - name: Configure Cachix
         uses: cachix/cachix-action@v17
         with:
           name: curious
           authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
           pushFilter: "(-source$|nixpkgs\\.tar\\.gz$)"
+
       - name: Build
         env:
           PACKAGE: ${{ matrix.package }}
-        run: nix build --no-link ".#${PACKAGE}"
+        run: nix-build --no-out-link -A "${PACKAGE}"
 
   result:
     name: CI result
@@ -161,8 +175,10 @@ jobs:
       - build
     if: always()
     runs-on: ubuntu-latest
+
     permissions:
       contents: read
+
     steps:
       - name: Fail on failed required jobs
         if: |
