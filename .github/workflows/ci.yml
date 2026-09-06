@@ -4,44 +4,154 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
-  ci:
+  format:
+    name: Formatting
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-
+      - name: Checkout
+        uses: actions/checkout@v7
       - name: Install Nix
-        uses: DeterminateSystems/nix-installer-action@v16
-
+        uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            connect-timeout = 3
+            extra-substituters = https://cache.nixos.org https://nix-community.cachix.org https://cache.numtide.com
+            extra-trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g=
+            github_access_token = ${{ secrets.GITHUB_TOKEN }}
       - name: Check formatting
         run: nix fmt -- --check $(git ls-files '*.nix')
 
+  check:
+    name: Flake check
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            connect-timeout = 3
+            extra-substituters = https://cache.nixos.org https://nix-community.cachix.org https://cache.numtide.com
+            extra-trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g=
+            github_access_token = ${{ secrets.GITHUB_TOKEN }}
       - name: Check flake
         run: nix flake check --all-systems
 
-      - name: Evaluate pure Nix API without the flake
+  evaluate:
+    name: Pure Nix API
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            connect-timeout = 3
+            extra-substituters = https://cache.nixos.org https://nix-community.cachix.org https://cache.numtide.com
+            extra-trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g=
+            github_access_token = ${{ secrets.GITHUB_TOKEN }}
+      - name: Evaluate pure package API
         run: |
           nix eval --impure --raw --expr \
-            '(import ./lib { pkgs = import (import ./npins).nixpkgs { system = builtins.currentSystem; }; }).vaultix.name'
+            '(import ./lib {
+              pkgs = import (import ./npins).nixpkgs {
+                system = builtins.currentSystem;
+              };
+            }).vaultix.name'
+      - name: Evaluate overlay
+        run: |
           nix eval --impure --raw --expr \
-            '(import (import ./npins).nixpkgs { system = builtins.currentSystem; overlays = [ (import ./overlays) ]; }).pam-fido-remote.name'
+            '(import (import ./npins).nixpkgs {
+              system = builtins.currentSystem;
+              overlays = [ (import ./overlays) ];
+            }).pam-fido-remote.name'
 
-      - name: Build vaultix
-        run: nix build .#vaultix
+  matrix:
+    name: Generate build matrix
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    outputs:
+      matrix: ${{ steps.generate.outputs.matrix }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            connect-timeout = 3
+            extra-substituters = https://cache.nixos.org https://nix-community.cachix.org https://cache.numtide.com
+            extra-trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g=
+            github_access_token = ${{ secrets.GITHUB_TOKEN }}
+      - name: Generate matrix
+        id: generate
+        run: |
+          matrix="$(nix eval --json -f ./ci/jobs.nix)"
+          echo "matrix=${matrix}" >> "$GITHUB_OUTPUT"
 
-      - name: Build pam-fido-remote
-        run: nix build .#pam-fido-remote
+  build:
+    name: ${{ matrix.name }}
+    needs:
+      - check
+      - matrix
+    runs-on: ${{ matrix.runsOn }}
+    timeout-minutes: 180
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.matrix.outputs.matrix) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+        with:
+          extra_nix_config: |
+            connect-timeout = 3
+            extra-substituters = https://cache.nixos.org https://nix-community.cachix.org https://cache.numtide.com
+            extra-trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g=
+            github_access_token = ${{ secrets.GITHUB_TOKEN }}
+      - name: Configure Cachix
+        uses: cachix/cachix-action@v17
+        with:
+          name: curious
+          authToken: ${{ secrets.CACHIX_AUTH_TOKEN }}
+          pushFilter: "(-source$|nixpkgs\\.tar\\.gz$)"
+      - name: Build
+        env:
+          PACKAGE: ${{ matrix.package }}
+        run: nix build --no-link ".#${PACKAGE}"
 
   result:
     name: CI result
     needs:
-      - ci
+      - format
+      - check
+      - evaluate
+      - matrix
+      - build
     if: always()
     runs-on: ubuntu-latest
     permissions:
       contents: read
     steps:
       - name: Fail on failed required jobs
-        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        if: |
+          contains(needs.*.result, 'failure') ||
+          contains(needs.*.result, 'cancelled')
         run: exit 1
