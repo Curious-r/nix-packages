@@ -121,6 +121,7 @@ jobs:
     name: ${{ matrix.name }}
     needs:
       - check
+      - evaluate
       - matrix
     runs-on: ${{ matrix.runsOn }}
     timeout-minutes: 180
