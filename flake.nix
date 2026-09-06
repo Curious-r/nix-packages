@@ -35,7 +35,7 @@
             overlays = [ overlay ];
           };
         in
-        builtins.mapAttrs (name: _: pkgs.${name}) packageFiles
+        builtins.mapAttrs (name: _: pkgs.curious.${name}) packageFiles
       );
 
       formatter = forAllSystems (system: nixpkgs.legacyPackages.${system}.nixfmt);

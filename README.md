@@ -10,7 +10,7 @@ nix-packages
 
 nix-config
   system/user configuration and integration
-````
+```
 
 The two repositories have different ownership boundaries:
 
@@ -48,7 +48,7 @@ pkgs/by-name.nix
       │
       ├──→ overlay.nix
       │       ↓
-      │    pkgs.<name>
+      │   pkgs.curious.<name>
       │
       └──→ flake.nix
               ↓
@@ -91,7 +91,7 @@ Packages can then be used as:
 
 ```nix
 pkgs.curious.vaultix
-pkgs.curious.pam-fido-remote`
+pkgs.curious.pam-fido-remote
 ```
 
 The overlay discovers packages directly from `pkgs/by-name`.
@@ -118,6 +118,8 @@ For a flake consumer:
   ];
 }
 ```
+
+The `curious` input name is a consumer-side convention; the repository's flake package outputs remain `packages.<system>.<name>`.
 
 The flake interface is provided for compatibility and distribution. Package definitions do not rely on it.
 
@@ -157,7 +159,7 @@ The package expression should be self-contained and should not depend on files o
 Once added, the package is automatically exposed through:
 
 * the package set as `foo`;
-* the overlay as `pkgs.foo`;
+* the overlay as `pkgs.curious.foo`;
 * the flake as `packages.<system>.foo`;
 * the CI build matrix.
 
