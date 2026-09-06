@@ -32,3 +32,16 @@ jobs:
 
       - name: Build pam-fido-remote
         run: nix build .#pam-fido-remote
+
+  result:
+    name: CI result
+    needs:
+      - ci
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Fail on failed required jobs
+        if: contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')
+        run: exit 1
