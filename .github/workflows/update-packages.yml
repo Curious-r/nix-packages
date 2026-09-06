@@ -31,6 +31,7 @@ jobs:
       - name: Install Nix
         uses: cachix/install-nix-action@v31
         with:
+          nix_path: nixpkgs=channel:nixos-unstable
           extra_nix_config: |
             connect-timeout = 3
             extra-substituters = https://cache.nixos.org https://nix-community.cachix.org https://cache.numtide.com
@@ -55,9 +56,8 @@ jobs:
 
             echo "::group::Update ${package}"
 
-            nix run nixpkgs#nix-update -- \
-              "${package}" \
-              --use-update-script
+            nix-shell -p nix-update --run \
+              "nix-update ${package} --use-update-script"
 
             echo "::endgroup::"
           done <<< "$packages"
