@@ -51,12 +51,13 @@ jobs:
         run: nix flake check --all-systems
 
   evaluate:
-    name: Pure Nix API
+    name: Package API
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+
       - name: Install Nix
         uses: cachix/install-nix-action@v31
         with:
@@ -65,21 +66,33 @@ jobs:
             extra-substituters = https://cache.nixos.org https://nix-community.cachix.org https://cache.numtide.com
             extra-trusted-public-keys = cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= nix-community.cachix.org-1:mB9FSh9qf2dCimDSUo8Zy7bkq5CX+/rkCWyvRCYg3Fs= niks3.numtide.com-1:DTx8wZduET09hRmMtKdQDxNNthLQETkc/yaX7M4qK0g=
             github_access_token = ${{ secrets.GITHUB_TOKEN }}
-      - name: Evaluate pure package API
+
+      - name: Check package API
         run: |
-          nix eval --impure --raw --expr \
-            '(import ./lib {
-              pkgs = import (import ./npins).nixpkgs {
+          nix eval --impure --expr '
+            let
+              packageFiles = import ./pkgs/by-name.nix;
+              packageNames = builtins.attrNames packageFiles;
+
+              nixpkgs = (builtins.getFlake (toString ./.)).inputs.nixpkgs;
+              pkgs = import nixpkgs {
                 system = builtins.currentSystem;
+                overlays = [ (import ./overlay.nix) ];
               };
-            }).vaultix.name'
-      - name: Evaluate overlay
-        run: |
-          nix eval --impure --raw --expr \
-            '(import (import ./npins).nixpkgs {
-              system = builtins.currentSystem;
-              overlays = [ (import ./overlays) ];
-            }).pam-fido-remote.name'
+
+              flakePackages =
+                (builtins.getFlake (toString .#)).packages.${builtins.currentSystem};
+              flakeNames = builtins.attrNames flakePackages;
+
+              checkPackage = name:
+                assert builtins.hasAttr name pkgs;
+                assert pkgs.lib.isDerivation pkgs.${name};
+                true;
+            in
+              assert builtins.all checkPackage packageNames;
+              assert packageNames == flakeNames;
+              true
+          '
 
   matrix:
     name: Generate build matrix
