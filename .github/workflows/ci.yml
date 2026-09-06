@@ -121,7 +121,7 @@ jobs:
               --eval \
               --json \
               --strict \
-              -f ./ci/jobs.nix
+              ./ci/jobs.nix
           )"
           echo "matrix=${matrix}" >> "$GITHUB_OUTPUT"
 
