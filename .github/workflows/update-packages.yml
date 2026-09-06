@@ -56,8 +56,7 @@ jobs:
 
             echo "::group::Update ${package}"
 
-            nix-shell -p nix-update --run \
-              "nix-update ${package} --use-update-script"
+            nix-shell tools/updater.nix --argstr package "$package"
 
             echo "::endgroup::"
           done <<< "$packages"
