@@ -7,7 +7,7 @@ in
 builtins.foldl' (
   packages: shard:
   let
-    shardDirectory = "${baseDirectory}/${shard}";
+    shardDirectory = baseDirectory + "/${shard}";
     entries = builtins.readDir shardDirectory;
 
     packageDirectories = builtins.filter (name: entries.${name} == "directory") (
@@ -18,7 +18,7 @@ builtins.foldl' (
   // builtins.listToAttrs (
     map (name: {
       inherit name;
-      value = "${shardDirectory}/${name}/package.nix";
+      value = shardDirectory + "/${name}/package.nix";
     }) packageDirectories
   )
 ) { } shards

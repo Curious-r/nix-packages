@@ -7,6 +7,7 @@
   pam,
   libfido2,
   openssl,
+  nix-update-script,
 }:
 
 rustPlatform.buildRustPackage (finalAttrs: {
@@ -35,6 +36,8 @@ rustPlatform.buildRustPackage (finalAttrs: {
 
   strictDeps = true;
   doCheck = false;
+
+  passthru.updateScript = nix-update-script { };
 
   postInstall = ''
     install -Dm0644 \

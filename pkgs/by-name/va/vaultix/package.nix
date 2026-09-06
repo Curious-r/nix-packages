@@ -2,6 +2,7 @@
   lib,
   fetchFromGitHub,
   rustPlatform,
+  nix-update-script,
 }:
 
 rustPlatform.buildRustPackage (finalAttrs: {
@@ -9,7 +10,7 @@ rustPlatform.buildRustPackage (finalAttrs: {
 
   # Upstream has not released the changes we need yet, so this tracks
   # upstream main at a fixed source revision.
-  version = "0-unstable-2026-09-06";
+  version = "0.3.0-unstable-2026-08-31";
 
   src = fetchFromGitHub {
     owner = "milieuim";
@@ -26,6 +27,10 @@ rustPlatform.buildRustPackage (finalAttrs: {
 
   strictDeps = true;
   doCheck = false;
+
+  passthru.updateScript = nix-update-script {
+    extraArgs = [ "--version=branch" ];
+  };
 
   meta = {
     mainProgram = "vaultix";
