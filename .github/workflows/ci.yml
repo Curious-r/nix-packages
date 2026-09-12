@@ -226,22 +226,24 @@ jobs:
         run: |
           set -euo pipefail
 
-          args=(
-            --eval
-            --json
-            --strict
-            ./ci/jobs.nix
-          )
-
-          if [[ "${BUILD_ALL}" != "true" ]]; then
-            args+=(
-              --arg
-              packageNames
-              "${PACKAGES}"
-            )
+          if [[ "${BUILD_ALL}" == "true" ]]; then
+            matrix="$(nix-instantiate \
+              --eval \
+              --json \
+              --strict \
+              --expr \
+              'import ./ci/jobs.nix {}'
+            )"
+          else
+            matrix="$(nix-instantiate \
+              --eval \
+              --json \
+              --strict \
+              --expr \
+              "import ./ci/jobs.nix { packageNames = ${PACKAGES}; }"
+            )"
           fi
 
-          matrix="$(nix-instantiate "${args[@]}")"
           echo "matrix=${matrix}" >> "${GITHUB_OUTPUT}"
 
   build:
