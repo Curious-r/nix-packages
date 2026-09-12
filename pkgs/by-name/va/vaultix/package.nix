@@ -3,6 +3,8 @@
   fetchFromGitHub,
   rustPlatform,
   nix-update-script,
+  stdenv,
+  mold,
 }:
 
 rustPlatform.buildRustPackage (finalAttrs: {
@@ -10,20 +12,21 @@ rustPlatform.buildRustPackage (finalAttrs: {
 
   # Upstream has not released the changes we need yet, so this tracks
   # upstream main at a fixed source revision.
-  version = "0.3.0-unstable-2026-08-31";
+  version = "0.3.0-unstable-2026-09-09";
 
   src = fetchFromGitHub {
     owner = "milieuim";
     repo = "vaultix";
-    rev = "55a1ab6475fca39c032a9ca37c76c10fa70eb085";
-    hash = "sha256-xnf3KQoqLMWIo+JA1M9rt3G/Kd/TNlvOGX7p3DBpOsA=";
+    rev = "f882a39f249eeac27f884e6ea9618ba106ef0ebe";
+    hash = "sha256-XijESLY+NC+KEzcIs+/06Pc6dAW8dJJHgWoFQ8LjomE=";
   };
 
   cargoHash = "sha256-8quSIQ80PBS210Xm13pcIEhUM2kN+d6wtRd5DDRjrK0=";
 
   nativeBuildInputs = [
     rustPlatform.bindgenHook
-  ];
+  ]
+  ++ lib.optional stdenv.hostPlatform.isLinux mold;
 
   strictDeps = true;
   doCheck = false;
