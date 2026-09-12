@@ -75,7 +75,7 @@ jobs:
             | .nodes[$nixpkgs].locked.rev
           ' flake.lock)"
 
-          echo "rev=${rev}" >> "$GITHUB_OUTPUT"
+          echo "rev=${rev}" >> "${GITHUB_OUTPUT}"
 
       - name: Install Nix
         uses: cachix/install-nix-action@v31
@@ -103,8 +103,102 @@ jobs:
                 true
             '
 
+  changes:
+    name: Detect relevant changes
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    permissions:
+      contents: read
+      pull-requests: read
+
+    outputs:
+      build: ${{ steps.scope.outputs.build }}
+      build-all: ${{ steps.scope.outputs.build-all }}
+      packages: ${{ steps.scope.outputs.packages }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Filter changed paths
+        id: filter
+        if: github.event_name == 'pull_request'
+        uses: dorny/paths-filter@v4
+        with:
+          list-files: json
+          filters: |
+            changed:
+              - '**'
+
+      - name: Determine build scope
+        id: scope
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          CHANGED_FILES: ${{ steps.filter.outputs.changed_files }}
+        run: |
+          set -euo pipefail
+
+          if [[ "${EVENT_NAME}" != "pull_request" ]]; then
+            echo "build=true" >> "${GITHUB_OUTPUT}"
+            echo "build-all=true" >> "${GITHUB_OUTPUT}"
+            echo 'packages=[]' >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          build_all=false
+          declare -A packages=()
+
+          while IFS= read -r path; do
+            case "${path}" in
+              README.md|docs/*)
+                ;;
+              pkgs/by-name/*/*/*)
+                relative="${path#pkgs/by-name/}"
+                shard="${relative%%/*}"
+                relative="${relative#*/}"
+                package="${relative%%/*}"
+
+                if [[ ! -f "pkgs/by-name/${shard}/${package}/package.nix" ]]; then
+                  build_all=true
+                else
+                  packages["${package}"]=1
+                fi
+                ;;
+              *)
+                build_all=true
+                ;;
+            esac
+          done < <(jq -r '.[]' <<< "${CHANGED_FILES}")
+
+          if [[ "${build_all}" == "true" ]]; then
+            echo "build=true" >> "${GITHUB_OUTPUT}"
+            echo "build-all=true" >> "${GITHUB_OUTPUT}"
+            echo 'packages=[]' >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          package_json="$(
+            printf '%s\n' "${!packages[@]}" |
+              sort |
+              jq -Rsc 'split("\n") | map(select(length > 0))'
+          )"
+
+          if [[ "${package_json}" == "[]" ]]; then
+            echo "build=false" >> "${GITHUB_OUTPUT}"
+          else
+            echo "build=true" >> "${GITHUB_OUTPUT}"
+          fi
+
+          echo "build-all=false" >> "${GITHUB_OUTPUT}"
+          echo "packages=${package_json}" >> "${GITHUB_OUTPUT}"
+
   matrix:
     name: Generate build matrix
+    needs: changes
+    if: needs.changes.outputs.build == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -126,22 +220,38 @@ jobs:
 
       - name: Generate matrix
         id: generate
+        env:
+          BUILD_ALL: ${{ needs.changes.outputs.build-all }}
+          PACKAGES: ${{ needs.changes.outputs.packages }}
         run: |
-          matrix="$(
-            nix-instantiate \
-              --eval \
-              --json \
-              --strict \
-              ./ci/jobs.nix
-          )"
-          echo "matrix=${matrix}" >> "$GITHUB_OUTPUT"
+          set -euo pipefail
+
+          args=(
+            --eval
+            --json
+            --strict
+            ./ci/jobs.nix
+          )
+
+          if [[ "${BUILD_ALL}" != "true" ]]; then
+            args+=(
+              --arg
+              packageNames
+              "${PACKAGES}"
+            )
+          fi
+
+          matrix="$(nix-instantiate "${args[@]}")"
+          echo "matrix=${matrix}" >> "${GITHUB_OUTPUT}"
 
   build:
     name: ${{ matrix.name }}
     needs:
       - check
       - evaluate
+      - changes
       - matrix
+    if: needs.changes.outputs.build == 'true'
     runs-on: ${{ matrix.runsOn }}
     timeout-minutes: 180
 
@@ -163,7 +273,7 @@ jobs:
             | .nodes[$nixpkgs].locked.rev
           ' flake.lock)"
 
-          echo "rev=${rev}" >> "$GITHUB_OUTPUT"
+          echo "rev=${rev}" >> "${GITHUB_OUTPUT}"
 
       - name: Install Nix
         uses: cachix/install-nix-action@v31
@@ -193,6 +303,7 @@ jobs:
       - format
       - check
       - evaluate
+      - changes
       - matrix
       - build
     if: always()
