@@ -52,14 +52,14 @@ jobs:
           )"
 
           while read -r package; do
-            [ -z "$package" ] && continue
+            [ -z "${package}" ] && continue
 
             echo "::group::Update ${package}"
 
-            nix-shell tools/updater.nix --argstr package "$package"
+            nix-shell tools/updater.nix --argstr package "${package}"
 
             echo "::endgroup::"
-          done <<< "$packages"
+          done <<< "${packages}"
 
       - name: Check changes
         run: git diff --check
