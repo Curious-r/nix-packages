@@ -43,10 +43,10 @@ Package discovery is automatic. Adding a package to `pkgs/by-name` makes it avai
 pkgs/by-name/
       ↓
 pkgs/by-name.nix
+      ↓
+  default.nix
       │
-      ├──→ default.nix
-      │       ↓
-      │   package set
+      ├──→ package set
       │       ├──→ nix-build
       │       └──→ package updater
       │
@@ -101,7 +101,7 @@ pkgs.curious.pam-fido-remote
 pkgs.curious.daed
 ```
 
-The overlay discovers packages directly from `pkgs/by-name`.
+The overlay exposes the package set constructed by `default.nix` under the `pkgs.curious` namespace.
 
 ### Flake
 
@@ -129,7 +129,7 @@ For a flake consumer:
 
 The `curious` input name is a consumer-side convention; the repository's flake package outputs remain `packages.<system>.<name>`.
 
-The flake interface is provided for compatibility and distribution. Package definitions do not rely on it.
+The flake interface exposes the package set constructed by `default.nix` for flake consumers. Package definitions do not rely on the flake interface.
 
 ## Adding a package
 

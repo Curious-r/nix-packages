@@ -27,15 +27,11 @@
 
       packages = forAllSystems (
         system:
-        let
-          packageFiles = import ./pkgs/by-name.nix;
-
+        import ./default.nix {
           pkgs = import sources.nixpkgs {
             inherit system;
-            overlays = [ overlay ];
           };
-        in
-        builtins.mapAttrs (name: _: pkgs.curious.${name}) packageFiles
+        }
       );
 
       formatter = import ./tools/formatter.nix { inherit sources systems; };
