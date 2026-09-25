@@ -8,7 +8,7 @@ let
 
   selectedPackage =
     if package == null then
-      throw "No package specified. Use: nix-shell tools/update.nix --argstr package <name>"
+      throw "No package specified. Use: nix-shell tools/updater.nix --argstr package <name>"
     else if !builtins.hasAttr package packages then
       throw "Package `${package}` does not exist."
     else
@@ -30,14 +30,20 @@ let
   updateName = selectedPackage.name;
   updatePname = selectedPackage.pname or (pkgs.lib.getName selectedPackage);
   updateVersion = selectedPackage.version or (pkgs.lib.getVersion selectedPackage);
+
+  updateCommand = pkgs.lib.escapeShellArgs commandArgs;
 in
 pkgs.mkShell {
   shellHook = ''
-    export UPDATE_NIX_NAME=${pkgs.lib.escapeShellArg updateName}
-    export UPDATE_NIX_PNAME=${pkgs.lib.escapeShellArg updatePname}
-    export UPDATE_NIX_OLD_VERSION=${pkgs.lib.escapeShellArg updateVersion}
-    export UPDATE_NIX_ATTR_PATH=${pkgs.lib.escapeShellArg package}
+    unset shellHook
 
-    exec ${pkgs.lib.escapeShellArgs commandArgs}
+    exec ${pkgs.coreutils}/bin/env \
+      UPDATE_NIX_NAME=${pkgs.lib.escapeShellArg updateName} \
+      UPDATE_NIX_PNAME=${pkgs.lib.escapeShellArg updatePname} \
+      UPDATE_NIX_OLD_VERSION=${pkgs.lib.escapeShellArg updateVersion} \
+      UPDATE_NIX_ATTR_PATH=${pkgs.lib.escapeShellArg package} \
+      ${pkgs.nix}/bin/nix-shell \
+      ${pkgs.path}/shell.nix \
+      --run ${pkgs.lib.escapeShellArg updateCommand}
   '';
 }
