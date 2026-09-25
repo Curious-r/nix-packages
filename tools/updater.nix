@@ -3,7 +3,8 @@
 }:
 
 let
-  pkgs = import <nixpkgs> { };
+  sources = import ../npins;
+  pkgs = import sources.nixpkgs { };
   packages = import ../default.nix { inherit pkgs; };
 
   selectedPackage =
