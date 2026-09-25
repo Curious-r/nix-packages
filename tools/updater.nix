@@ -32,8 +32,6 @@ let
   updateVersion = selectedPackage.version or (pkgs.lib.getVersion selectedPackage);
 in
 pkgs.mkShell {
-  inputsFrom = [ selectedPackage ];
-
   shellHook = ''
     export UPDATE_NIX_NAME=${pkgs.lib.escapeShellArg updateName}
     export UPDATE_NIX_PNAME=${pkgs.lib.escapeShellArg updatePname}
