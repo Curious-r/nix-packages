@@ -25,6 +25,10 @@ The canonical package tree is name-based:
 ```text
 pkgs/
 └── by-name/
+    ├── da/
+    │   └── daed/
+    │       ├── package.nix
+    │       └── update.sh
     ├── pa/
     │   └── pam-fido-remote/
     │       └── package.nix
@@ -63,6 +67,7 @@ pkgs/by-name.nix
 | ----------------- | ----------------------------------------------------------------------------------------- |
 | `vaultix`         | [milieuim/vaultix](https://github.com/milieuim/vaultix), upstream `main`, pinned revision |
 | `pam-fido-remote` | [r-vdp/pam-fido-remote](https://codeberg.org/r-vdp/pam-fido-remote), release `v0.1.5`     |
+| `daed`            | [daeuniverse/daed](https://github.com/daeuniverse/daed), release `v2.1.1`                 |
 
 ## Usage
 
@@ -73,6 +78,7 @@ The canonical package interface is `default.nix`.
 ```bash
 nix-build -A vaultix
 nix-build -A pam-fido-remote
+nix-build -A daed
 ```
 
 This exposes the same packages as the repository's other integration layers.
@@ -92,6 +98,7 @@ Packages can then be used as:
 ```nix
 pkgs.curious.vaultix
 pkgs.curious.pam-fido-remote
+pkgs.curious.daed
 ```
 
 The overlay discovers packages directly from `pkgs/by-name`.
@@ -103,6 +110,7 @@ The repository also exposes packages through its flake interface:
 ```bash
 nix build .#vaultix
 nix build .#pam-fido-remote
+nix build .#daed
 ```
 
 For a flake consumer:
@@ -234,4 +242,5 @@ Packages can be built locally through the canonical package set with:
 ```bash
 nix-build -A vaultix
 nix-build -A pam-fido-remote
+nix-build -A daed
 ```
