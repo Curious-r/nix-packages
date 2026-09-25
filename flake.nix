@@ -1,15 +1,15 @@
 {
   description = "Reusable third-party Nix packages";
 
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
-
   outputs =
-    { nixpkgs, ... }:
+    _:
     let
       systems = [
         "x86_64-linux"
         "aarch64-linux"
       ];
+
+      sources = import ./npins;
 
       forAllSystems =
         f:
@@ -30,7 +30,7 @@
         let
           packageFiles = import ./pkgs/by-name.nix;
 
-          pkgs = import nixpkgs {
+          pkgs = import sources.nixpkgs {
             inherit system;
             overlays = [ overlay ];
           };
@@ -38,6 +38,6 @@
         builtins.mapAttrs (name: _: pkgs.curious.${name}) packageFiles
       );
 
-      formatter = forAllSystems (system: nixpkgs.legacyPackages.${system}.nixfmt);
+      formatter = import ./tools/formatter.nix { inherit sources systems; };
     };
 }

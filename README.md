@@ -14,9 +14,9 @@ nix-config
 
 The two repositories have different ownership boundaries:
 
-* `nix-packages` owns reusable package definitions.
-* `nix-config` owns system configuration, Home Manager/NixOS modules, and configuration-specific source pins.
-* Package definitions in this repository are self-contained and do not depend on the repository's flake interface or a global source registry.
+- `nix-packages` owns reusable package definitions.
+- `nix-config` owns system configuration, Home Manager/NixOS modules, and configuration-specific source pins.
+- Package definitions in this repository are self-contained and do not depend on the repository's flake interface or a global source registry.
 
 This repository follows a Nix-first design inspired by the traditional nixpkgs package collection model. The package tree and `default.nix` form the canonical package interface; the flake is an optional compatibility and distribution layer.
 
@@ -166,10 +166,10 @@ The package expression should be self-contained and should not depend on files o
 
 Once added, the package is automatically exposed through:
 
-* the package set as `foo`;
-* the overlay as `pkgs.curious.foo`;
-* the flake as `packages.<system>.foo`;
-* the CI build matrix.
+- the package set as `foo`;
+- the overlay as `pkgs.curious.foo`;
+- the flake as `packages.<system>.foo`;
+- the CI build matrix.
 
 No package list needs to be updated manually.
 
@@ -205,18 +205,18 @@ nix-shell tools/updater.nix --argstr package <name>
 
 The package update workflow runs these updates automatically and opens or updates an automated pull request.
 
-## Flake input updates
+## Pinned source updates
 
-Flake inputs are maintained separately from package sources.
+The repository pins `nixpkgs` through [npins](https://github.com/andir/npins) for CI cache alignment and local tooling evaluation, independently of package sources.
 
-The `flake.lock` update workflow periodically updates flake inputs and opens an automated pull request. Package source updates and flake input updates therefore remain independent:
+The `npins` update workflow periodically updates pinned sources and opens an automated pull request. Package source updates and pinned source updates therefore remain independent:
 
 ```text
 package updater
   → package.nix
 
-flake input updater
-  → flake.lock
+npins updater
+  → npins/sources.json
 ```
 
 Both changes are validated by the normal CI pipeline.
@@ -228,7 +228,7 @@ The repository provides a development environment through [devenv](https://deven
 Formatting can be checked with:
 
 ```bash
-nix fmt -- --check $(git ls-files '*.nix')
+nix fmt -- --check
 ```
 
 The flake can be checked with:

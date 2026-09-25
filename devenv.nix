@@ -5,6 +5,7 @@
 
   packages = [
     pkgs.nixfmt
+    pkgs.npins
   ];
 
   languages.nix = {
@@ -18,7 +19,11 @@
 
   enterTest = ''
     nix --version
+    npins --version
   '';
 
-  git-hooks.hooks.nixfmt.enable = true;
+  git-hooks.hooks = {
+    nixfmt.enable = true;
+    prettier.enable = true;
+  };
 }
