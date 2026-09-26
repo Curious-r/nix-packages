@@ -32,9 +32,13 @@ pkgs/
     ├── pa/
     │   └── pam-fido-remote/
     │       └── package.nix
-    └── va/
-        └── vaultix/
-            └── package.nix
+    ├── va/
+    │   └── vaultix/
+    │       └── package.nix
+    └── ze/
+        └── zen-browser/
+            ├── package.nix
+            └── update.sh
 ```
 
 Package discovery is automatic. Adding a package to `pkgs/by-name` makes it available through the repository's package interfaces without maintaining a separate package list.
@@ -68,6 +72,7 @@ pkgs/by-name.nix
 | `vaultix`         | [milieuim/vaultix](https://github.com/milieuim/vaultix), upstream `main`, pinned revision |
 | `pam-fido-remote` | [r-vdp/pam-fido-remote](https://codeberg.org/r-vdp/pam-fido-remote), release `v0.1.5`     |
 | `daed`            | [daeuniverse/daed](https://github.com/daeuniverse/daed), release `v2.1.1`                 |
+| `zen-browser`     | [zen-browser/desktop](https://github.com/zen-browser/desktop), release `v1.22.3b`         |
 
 ## Usage
 
@@ -79,6 +84,7 @@ The canonical package interface is `default.nix`.
 nix-build -A vaultix
 nix-build -A pam-fido-remote
 nix-build -A daed
+nix-build -A zen-browser
 ```
 
 This exposes the same packages as the repository's other integration layers.
@@ -111,6 +117,7 @@ The repository also exposes packages through its flake interface:
 nix build .#vaultix
 nix build .#pam-fido-remote
 nix build .#daed
+nix build .#zen-browser
 ```
 
 For a flake consumer:
@@ -243,4 +250,5 @@ Packages can be built locally through the canonical package set with:
 nix-build -A vaultix
 nix-build -A pam-fido-remote
 nix-build -A daed
+nix-build -A zen-browser
 ```
