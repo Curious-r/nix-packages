@@ -4,7 +4,7 @@
 set -euo pipefail
 
 repo="$(git rev-parse --show-toplevel)"
-package_file="${repo}/pkgs/by-name/ze/zen-browser/package.nix"
+package_file="${repo}/pkgs/by-name/ze/zen-browser-unwrapped/package.nix"
 
 current_version="$(
   sed -n 's/^  version = "\([^"]*\)";$/\1/p' "${package_file}"
