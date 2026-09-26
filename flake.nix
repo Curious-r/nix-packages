@@ -27,11 +27,14 @@
 
       packages = forAllSystems (
         system:
-        import ./default.nix {
-          pkgs = import sources.nixpkgs {
-            inherit system;
+        let
+          scope = import ./default.nix {
+            pkgs = import sources.nixpkgs {
+              inherit system;
+            };
           };
-        }
+        in
+        scope.packages scope
       );
 
       formatter = import ./tools/formatter.nix { inherit sources systems; };
