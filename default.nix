@@ -5,4 +5,6 @@
 let
   packageFiles = import ./pkgs/by-name.nix;
 in
-builtins.mapAttrs (_name: packageFile: pkgs.callPackage packageFile { }) packageFiles
+pkgs.lib.makeScope pkgs.newScope (
+  self: builtins.mapAttrs (_name: packageFile: self.callPackage packageFile { }) packageFiles
+)
