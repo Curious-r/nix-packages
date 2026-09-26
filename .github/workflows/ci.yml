@@ -85,7 +85,8 @@ jobs:
             --strict \
             -E '
               let
-                packages = import ./default.nix { };
+                scope = import ./default.nix { };
+                packages = scope.packages scope;
                 packageNames = builtins.attrNames packages;
               in
                 assert builtins.all (

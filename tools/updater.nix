@@ -5,7 +5,8 @@
 let
   sources = import ../npins;
   pkgs = import sources.nixpkgs { };
-  packages = import ../default.nix { inherit pkgs; };
+  scope = import ../default.nix { inherit pkgs; };
+  packages = scope.packages scope;
 
   selectedPackage =
     if package == null then

@@ -43,8 +43,11 @@ jobs:
               --strict \
               --raw \
               -E '
+                let
+                  scope = import ./default.nix { };
+                in
                 builtins.concatStringsSep "\n" (
-                  builtins.attrNames (import ./default.nix { })
+                  builtins.attrNames (scope.packages scope)
                 )
               '
           )"
