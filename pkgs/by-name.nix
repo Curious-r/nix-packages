@@ -13,12 +13,20 @@ builtins.foldl' (
     packageDirectories = builtins.filter (name: entries.${name} == "directory") (
       builtins.attrNames entries
     );
+
+    newPackages = builtins.listToAttrs (
+      map (name: {
+        inherit name;
+        value = shardDirectory + "/${name}/package.nix";
+      }) packageDirectories
+    );
+
+    duplicateNames = builtins.filter (name: builtins.hasAttr name packages) (
+      builtins.attrNames newPackages
+    );
   in
-  packages
-  // builtins.listToAttrs (
-    map (name: {
-      inherit name;
-      value = shardDirectory + "/${name}/package.nix";
-    }) packageDirectories
-  )
+  assert
+    duplicateNames == [ ]
+    || throw "Duplicate package names: ${builtins.concatStringsSep ", " duplicateNames}";
+  packages // newPackages
 ) { } shards
