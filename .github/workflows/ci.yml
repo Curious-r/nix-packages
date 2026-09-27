@@ -90,7 +90,7 @@ jobs:
                 packageNames = builtins.attrNames packages;
               in
                 assert builtins.all (
-                  name: packages.${name}.type == "derivation"
+                  name: (builtins.getAttr name packages).type == "derivation"
                 ) packageNames;
                 true
             '
@@ -134,9 +134,11 @@ jobs:
           set -euo pipefail
 
           if [[ "${EVENT_NAME}" != "pull_request" ]]; then
-            echo "build=true" >> "${GITHUB_OUTPUT}"
-            echo "build-all=true" >> "${GITHUB_OUTPUT}"
-            echo 'packages=[]' >> "${GITHUB_OUTPUT}"
+            {
+              echo "build=true"
+              echo "build-all=true"
+              echo 'packages=[]'
+            } >> "${GITHUB_OUTPUT}"
             exit 0
           fi
 
@@ -166,9 +168,11 @@ jobs:
           done < <(jq -r '.[]' <<< "${CHANGED_FILES}")
 
           if [[ "${build_all}" == "true" ]]; then
-            echo "build=true" >> "${GITHUB_OUTPUT}"
-            echo "build-all=true" >> "${GITHUB_OUTPUT}"
-            echo 'packages=[]' >> "${GITHUB_OUTPUT}"
+            {
+              echo "build=true"
+              echo "build-all=true"
+              echo 'packages=[]'
+            } >> "${GITHUB_OUTPUT}"
             exit 0
           fi
 
@@ -282,7 +286,9 @@ jobs:
       - name: Build
         env:
           PACKAGE: ${{ matrix.package }}
-        run: nix-build --no-out-link -A "${PACKAGE}"
+        run: |
+          nix-shell -p nix-fast-build --run \
+            "nix-fast-build --skip-cached --file ./default.nix -A \"${PACKAGE}\""
 
   result:
     name: CI result
