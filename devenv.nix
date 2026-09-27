@@ -23,6 +23,10 @@
   '';
 
   git-hooks.hooks = {
+    # Validate GitHub Actions workflow syntax.
+    actionlint.enable = true;
+
+    # Keep consistent with the repository formatter.
     nixfmt.enable = true;
     prettier.enable = true;
   };
