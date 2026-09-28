@@ -45,10 +45,13 @@ jobs:
               -E '
                 let
                   scope = import ./default.nix { };
+                  packages = scope.packages scope;
+                  packageNames = builtins.attrNames packages;
+                  updateablePackages = builtins.filter (
+                    name: builtins.hasAttr "updateScript" (builtins.getAttr name packages)
+                  ) packageNames;
                 in
-                builtins.concatStringsSep "\n" (
-                  builtins.attrNames (scope.packages scope)
-                )
+                builtins.concatStringsSep "\n" updateablePackages
               '
           )"
 
