@@ -101,6 +101,7 @@ nix-build -A pam-fido-remote
 nix-build -A daed
 nix-build -A zen-browser
 nix-build -A zen-browser-unwrapped
+# ...
 ```
 
 The scope can also be imported directly:
@@ -122,7 +123,7 @@ The canonical integration API for adding the package scope to an existing nixpkg
 
 ```nix
 nixpkgs.overlays = [
-  inputs.curious.overlays.default
+  (import /path/to/nix-packages/overlay.nix)
 ];
 ```
 
@@ -134,6 +135,15 @@ pkgs.curious.pam-fido-remote
 pkgs.curious.daed
 pkgs.curious.zen-browser
 pkgs.curious.zen-browser-unwrapped
+# ...
+```
+
+For a Flake consumer, the same overlay can be referenced through the Flake output:
+
+```nix
+nixpkgs.overlays = [
+  inputs.curious.overlays.default
+];
 ```
 
 `pkgs.curious` is a package scope. In addition to its packages, it provides the scope helpers supplied by `lib.makeScope`, such as `callPackage` and `overrideScope`.
@@ -150,6 +160,7 @@ nix build .#pam-fido-remote
 nix build .#daed
 nix build .#zen-browser
 nix build .#zen-browser-unwrapped
+# ...
 ```
 
 For a flake consumer:
@@ -288,4 +299,5 @@ nix-build -A pam-fido-remote
 nix-build -A daed
 nix-build -A zen-browser
 nix-build -A zen-browser-unwrapped
+# ...
 ```
