@@ -5,10 +5,7 @@
   nix-update-script,
   pkgsCross,
   lld,
-}:
-
-let
-  target =
+  target ? (
     {
       "x86_64-linux" = "x86_64-unknown-uefi";
       # AArch64 UEFI support is currently blocked by nixpkgs' LLVM toolchain:
@@ -16,8 +13,11 @@ let
       # Re-enable this once the nixpkgs toolchain supports it.
       # "aarch64-linux" = "aarch64-unknown-uefi";
     }
-    .${stdenv.hostPlatform.system} or (throw "Sprout is unsupported on ${stdenv.hostPlatform.system}");
+    .${stdenv.hostPlatform.system} or (throw "Sprout is unsupported on ${stdenv.hostPlatform.system}")
+  ),
+}:
 
+let
   targetPlatform =
     {
       "x86_64-unknown-uefi" = "x86_64-uefi";
