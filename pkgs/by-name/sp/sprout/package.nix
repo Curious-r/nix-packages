@@ -5,32 +5,30 @@
   nix-update-script,
   pkgsCross,
   lld,
-  target ? (
-    {
-      "x86_64-linux" = "x86_64-unknown-uefi";
-      # AArch64 UEFI support is currently blocked by nixpkgs' LLVM toolchain:
-      # clang 21.1.8 does not recognize the `aarch64-unknown-uefi` target.
-      # Re-enable this once the nixpkgs toolchain supports it.
-      # "aarch64-linux" = "aarch64-unknown-uefi";
-    }
-    .${stdenv.hostPlatform.system} or (throw "Sprout is unsupported on ${stdenv.hostPlatform.system}")
-  ),
+  targetArch ? stdenv.hostPlatform.parsed.cpu.name,
 }:
 
 let
-  targetPlatform =
-    {
-      "x86_64-unknown-uefi" = "x86_64-uefi";
-      # See the note above about the AArch64 UEFI toolchain.
-      # "aarch64-unknown-uefi" = "aarch64-uefi";
-    }
-    .${target};
+  targets = {
+    x86_64 = {
+      rustTarget = "x86_64-unknown-uefi";
+      nixPlatform = "x86_64-uefi";
+    };
 
-  rustPlatform = pkgsCross.${target}.rustPlatform;
+    aarch64 = {
+      rustTarget = "aarch64-unknown-uefi";
+      nixPlatform = "aarch64-uefi";
+    };
+  };
+
+  target =
+    targets.${targetArch} or (throw "Sprout does not support target architecture ${targetArch}");
+
+  rustPlatform = pkgsCross.${target.rustTarget}.rustPlatform;
 in
 lib.addMetaAttrs
   {
-    platforms = [ targetPlatform ];
+    platforms = [ target.nixPlatform ];
   }
   (
     rustPlatform.buildRustPackage (finalAttrs: {
@@ -53,7 +51,7 @@ lib.addMetaAttrs
         "--bin"
         "sprout"
         "--config"
-        "target.${target}.linker=\"${lib.getExe' lld "lld"}\""
+        "target.${target.rustTarget}.linker=\"${lib.getExe' lld "lld"}\""
       ];
 
       doCheck = false;
@@ -66,7 +64,7 @@ lib.addMetaAttrs
         runHook preInstall
 
         install -Dm0755 \
-          "target/${target}/release/sprout.efi" \
+          "target/${target.rustTarget}/release/sprout.efi" \
           "$out/lib/sprout/sprout.efi"
 
         runHook postInstall
@@ -79,6 +77,10 @@ lib.addMetaAttrs
         homepage = "https://sprout.edera.dev";
         changelog = "https://github.com/edera-dev/sprout/releases/tag/v${finalAttrs.version}";
         license = lib.licenses.asl20;
+
+        # The current nixpkgs LLVM toolchain cannot build the AArch64 UEFI
+        # target. Remove this once aarch64-unknown-uefi is supported.
+        broken = targetArch == "aarch64";
       };
     })
   )

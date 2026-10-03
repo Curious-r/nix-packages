@@ -13,6 +13,10 @@ let
     aarch64-linux = "ubuntu-24.04-arm";
   };
 
+  packages = (import ../flake.nix { }).packages;
+
+  isBuildable = system: name: !(packages.${system}.${name}.meta.broken or false);
+
   mkJobs =
     system:
     map (name: {
@@ -20,7 +24,7 @@ let
       inherit system;
       package = name;
       runsOn = runnerFor.${system};
-    }) packageNames;
+    }) (builtins.filter (name: isBuildable system name) packageNames);
 in
 
 builtins.concatLists (map mkJobs systems)
