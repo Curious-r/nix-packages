@@ -11,14 +11,18 @@ let
   target =
     {
       "x86_64-linux" = "x86_64-unknown-uefi";
-      "aarch64-linux" = "aarch64-unknown-uefi";
+      # AArch64 UEFI support is currently blocked by nixpkgs' LLVM toolchain:
+      # clang 21.1.8 does not recognize the `aarch64-unknown-uefi` target.
+      # Re-enable this once the nixpkgs toolchain supports it.
+      # "aarch64-linux" = "aarch64-unknown-uefi";
     }
     .${stdenv.hostPlatform.system} or (throw "Sprout is unsupported on ${stdenv.hostPlatform.system}");
 
   targetPlatform =
     {
       "x86_64-unknown-uefi" = "x86_64-uefi";
-      "aarch64-unknown-uefi" = "aarch64-uefi";
+      # See the note above about the AArch64 UEFI toolchain.
+      # "aarch64-unknown-uefi" = "aarch64-uefi";
     }
     .${target};
 
