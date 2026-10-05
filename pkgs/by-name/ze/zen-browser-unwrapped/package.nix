@@ -16,7 +16,7 @@
 }:
 
 let
-  version = "1.22.3b";
+  version = "1.23b";
   binaryName = "zen";
   applicationName = "Zen Browser";
   libName = "zen-${version}";
