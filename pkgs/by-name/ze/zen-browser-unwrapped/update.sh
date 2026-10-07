@@ -7,8 +7,15 @@ repo="$(git rev-parse --show-toplevel)"
 package_file="${repo}/pkgs/by-name/ze/zen-browser-unwrapped/package.nix"
 
 current_version="$(
-  sed -n 's/^  version = "\([^"]*\)";$/\1/p' "${package_file}"
+  sed -En \
+    's/^[[:space:]]*version[[:space:]]*=[[:space:]]*"([^"]*)";[[:space:]]*$/\1/p' \
+    "${package_file}"
 )"
+
+if [[ -z "${current_version}" ]]; then
+  echo "Failed to determine current zen-browser version." >&2
+  exit 1
+fi
 
 release="$(
   curl -fsSL \
@@ -29,6 +36,7 @@ get_hash() {
   local url="${1}"
 
   nix store prefetch-file \
+    --refresh \
     --hash-type sha256 \
     --json \
     "${url}" |
@@ -45,16 +53,21 @@ aarch64_hash="$(
     "https://github.com/zen-browser/desktop/releases/download/${latest_version}/zen.linux-aarch64.tar.xz"
 )"
 
-sed -i \
-  "s|^  version = \".*\";|  version = \"${latest_version}\";|" \
+sed -E -i \
+  "s/^([[:space:]]*)version[[:space:]]*=[[:space:]]*\"[^\"]*\";[[:space:]]*$/\1version = \"${latest_version}\";/" \
   "${package_file}"
 
-sed -i \
-  "/^  x86_64-linux = {/,/^  };/ s|^    hash = .*;|    hash = \"${x86_64_hash}\";|" \
-  "${package_file}"
+update_hash() {
+  local system="${1}"
+  local hash="${2}"
 
-sed -i \
-  "/^  aarch64-linux = {/,/^  };/ s|^    hash = .*;|    hash = \"${aarch64_hash}\";|" \
-  "${package_file}"
+  sed -E -i \
+    "/^[[:space:]]*${system}[[:space:]]*=[[:space:]]*[{]/,/^[[:space:]]*[}][[:space:]]*;.*$/ \
+      s|^([[:space:]]*)hash[[:space:]]*=[[:space:]]*\"[^\"]*\";[[:space:]]*$|\1hash = \"${hash}\";|" \
+    "${package_file}"
+}
+
+update_hash "x86_64-linux" "${x86_64_hash}"
+update_hash "aarch64-linux" "${aarch64_hash}"
 
 echo "Updated zen-browser: ${current_version} -> ${latest_version}"
