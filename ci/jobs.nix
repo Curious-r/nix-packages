@@ -13,9 +13,20 @@ let
     aarch64-linux = "ubuntu-24.04-arm";
   };
 
-  packages = (import ../flake.nix { }).packages;
+  sources = import ../npins;
 
-  isBuildable = system: name: !(packages.${system}.${name}.meta.broken or false);
+  packagesFor =
+    system:
+    let
+      pkgs = import sources.nixpkgs {
+        inherit system;
+        config.allowBroken = true;
+      };
+      scope = import ../default.nix { inherit pkgs; };
+    in
+    scope.packages scope;
+
+  isBuildable = system: name: !((packagesFor system).${name}.meta.broken or false);
 
   mkJobs =
     system:

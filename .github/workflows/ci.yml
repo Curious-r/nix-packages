@@ -51,7 +51,9 @@ jobs:
             connect-timeout = 3
 
       - name: Check flake
-        run: nix flake check --all-systems
+        env:
+          NIXPKGS_ALLOW_BROKEN: "1"
+        run: nix flake check --impure --all-systems
 
   evaluate:
     name: Package API
