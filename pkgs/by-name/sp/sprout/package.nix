@@ -5,24 +5,24 @@
   nix-update-script,
   pkgsCross,
   lld,
-  targetArch ? stdenv.hostPlatform.parsed.cpu.name,
 }:
 
 let
-  targets = {
-    x86_64 = {
-      rustTarget = "x86_64-unknown-uefi";
-      nixPlatform = "x86_64-uefi";
-    };
-
-    aarch64 = {
-      rustTarget = "aarch64-unknown-uefi";
-      nixPlatform = "aarch64-uefi";
-    };
-  };
+  inherit (stdenv.hostPlatform) isAarch64 isx86_64;
 
   target =
-    targets.${targetArch} or (throw "Sprout does not support target architecture ${targetArch}");
+    if isx86_64 then
+      {
+        rustTarget = "x86_64-unknown-uefi";
+        nixPlatform = "x86_64-uefi";
+      }
+    else if isAarch64 then
+      {
+        rustTarget = "aarch64-unknown-uefi";
+        nixPlatform = "aarch64-uefi";
+      }
+    else
+      throw "Sprout does not support this architecture";
 
   rustPlatform = pkgsCross.${target.rustTarget}.rustPlatform;
 in
@@ -80,7 +80,7 @@ lib.addMetaAttrs
 
         # The current nixpkgs LLVM toolchain cannot build the AArch64 UEFI
         # target. Remove this once aarch64-unknown-uefi is supported.
-        broken = targetArch == "aarch64";
+        broken = isAarch64;
       };
     })
   )
