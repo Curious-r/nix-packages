@@ -20,7 +20,15 @@ let
     let
       pkgs = import sources.nixpkgs {
         inherit system;
-        config.allowBroken = true;
+        config = {
+          allowBroken = false;
+          problems.matchers = [
+            {
+              kind = "broken";
+              handler = "warn";
+            }
+          ];
+        };
       };
       scope = import ../default.nix { inherit pkgs; };
     in
