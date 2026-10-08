@@ -34,7 +34,12 @@ let
     in
     scope.packages scope;
 
-  isBuildable = system: name: !((packagesFor system).${name}.meta.broken or false);
+  isEligible =
+    system: name:
+    let
+      package = (packagesFor system).${name};
+    in
+    !(package.meta.broken or false);
 
   mkJobs =
     system:
@@ -43,7 +48,7 @@ let
       inherit system;
       package = name;
       runsOn = runnerFor.${system};
-    }) (builtins.filter (name: isBuildable system name) packageNames);
+    }) (builtins.filter (name: isEligible system name) packageNames);
 in
 
 builtins.concatLists (map mkJobs systems)
