@@ -12,16 +12,16 @@
 
 rustPlatform.buildRustPackage (finalAttrs: {
   pname = "pam-fido-remote";
-  version = "0.1.5";
+  version = "0.2.0";
 
   src = fetchFromCodeberg {
     owner = "r-vdp";
     repo = "pam-fido-remote";
     rev = "v${finalAttrs.version}";
-    hash = "sha256-cpbTJDhg3R7QuS032URn1HyCbzl6K42NBpyLHQrWT48=";
+    hash = "sha256-d9wZq53RNQOKJg0gmXBS4QDJ8a3vk8cD3taQXKbMyIA=";
   };
 
-  cargoHash = "sha256-uCt/VIcwRLVfR7A5O0mS5SV2KPpbAg/0oxUJIGJBgdE=";
+  cargoHash = "sha256-tHpX8Bn27/BJ0up2KeoZPO+kjScfEXCWhbclhtNfbiQ=";
 
   nativeBuildInputs = [
     pkg-config
