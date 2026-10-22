@@ -69,7 +69,11 @@ buildGoModule {
 
   sourceRoot = "${src.name}/wing";
 
-  vendorHash = "sha256-+YQ/Ia54N/QKwd9p4AePg3CMjQvc4mFE1EcA/JPc8Po=";
+  patches = [
+    ./bump-cilium-ebpf.patch
+  ];
+
+  vendorHash = "sha256-Dlk1sfiF9DLeFOQjqP/yeSNdutvEJY6tQto2tuEFUCo=";
   proxyVendor = true;
 
   # The upstream build is handled by `make bundle` instead of buildGoModule's default phases.
