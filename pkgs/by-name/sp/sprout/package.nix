@@ -33,16 +33,16 @@ lib.addMetaAttrs
   (
     rustPlatform.buildRustPackage (finalAttrs: {
       pname = "sprout";
-      version = "0.0.30";
+      version = "0.0.31";
 
       src = fetchFromGitHub {
         owner = "edera-dev";
         repo = "sprout";
         rev = "v${finalAttrs.version}";
-        hash = "sha256-8QWzFK2JKvW0Npe+XCVqeuK5x7tOYaCtb3V8L1/Fm+4=";
+        hash = "sha256-23yNcZfFuVSFyjw6CHAXpU2cyBuR0E2UQ5nKbL+pRAY=";
       };
 
-      cargoHash = "sha256-i7tMmxPLJCWHmq/ofRjmpmoZJdyx54pCkv/mddJecus=";
+      cargoHash = "sha256-iNzVSyIaVlA6+4Zh3chr3CvMBXX3T98ZcFPPg0zlFm8=";
 
       # cargo-auditable does not currently handle UEFI/PE targets correctly.
       auditable = false;
