@@ -1,4 +1,4 @@
-# nix-packages
+# ![❄️](./logo.svg) nix-packages
 
 A collection of reusable third-party Nix packages, split out from [nix-config](https://github.com/Curious-r/nix-config).
 
