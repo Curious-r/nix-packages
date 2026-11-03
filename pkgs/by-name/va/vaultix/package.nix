@@ -12,13 +12,13 @@ rustPlatform.buildRustPackage (finalAttrs: {
 
   # Upstream has not released the changes we need yet, so this tracks
   # upstream main at a fixed source revision.
-  version = "0.3.0-unstable-2026-11-01";
+  version = "0.3.0-unstable-2026-11-02";
 
   src = fetchFromGitHub {
     owner = "milieuim";
     repo = "vaultix";
-    rev = "f00717457927f14525728562b7f0ba735ff44de1";
-    hash = "sha256-gAUwtxARthE+hVGUmgWSGaWpExC8R9Z6TtJcsB9iWNg=";
+    rev = "51582d8c18de03be6365066607241b9235e35367";
+    hash = "sha256-BRXVHllfAnqnzjihNsR16o+w+SiCy/nTyvnzdNYQZwc=";
   };
 
   cargoHash = "sha256-8quSIQ80PBS210Xm13pcIEhUM2kN+d6wtRd5DDRjrK0=";
