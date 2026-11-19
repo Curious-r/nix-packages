@@ -16,7 +16,7 @@
 }:
 
 let
-  version = "1.24.2b";
+  version = "1.24.3b";
   binaryName = "zen";
   applicationName = "Zen Browser";
   libName = "zen-${version}";
@@ -24,12 +24,12 @@ let
   sources = {
     x86_64-linux = {
       url = "https://github.com/zen-browser/desktop/releases/download/${version}/zen.linux-x86_64.tar.xz";
-      hash = "sha256-vPfkMWDs/l8plT7SqYTnqAKKWPLsDjEU02u5BNX1zoA=";
+      hash = "sha256-3eS05EACEowv8+/FYHTmccJO/+Vv0ZKrLu45clQeGi0=";
     };
 
     aarch64-linux = {
       url = "https://github.com/zen-browser/desktop/releases/download/${version}/zen.linux-aarch64.tar.xz";
-      hash = "sha256-hZFDT89JioNqMrxzFOuJ+9xL3I8Dotc1d0sa5ptrIdU=";
+      hash = "sha256-d8BL2wV1q5GMHW9B0EpVmW0iY4JKA5LcGz843rhzpXo=";
     };
   };
 
